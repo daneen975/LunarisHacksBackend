@@ -1,4 +1,4 @@
-// server.js - Express backend for Lunaris Hacks forms (Updated for simplified forms)
+// server.js - Express backend for Lunaris Hacks forms (Complete Fixed Version)
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -21,7 +21,7 @@ const pool = new Pool({
 // Create tables if they don't exist
 const createTables = async () => {
   try {
-    // General Interest Form table (simplified)
+    // General Interest Form table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS interest_form (
         id SERIAL PRIMARY KEY,
@@ -33,13 +33,12 @@ const createTables = async () => {
       )
     `);
 
-    // Sponsorship Form table (simplified)
+    // Sponsorship Form table (matches frontend fields exactly)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sponsorship_form (
         id SERIAL PRIMARY KEY,
-        email VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
-        email_confirm VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
         phone_number VARCHAR(20) NOT NULL,
         comment TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -113,42 +112,38 @@ app.post('/api/interest-form', async (req, res) => {
   }
 });
 
-// Submit sponsorship form
+// Submit sponsorship form (FIXED - matches frontend exactly)
 app.post('/api/sponsorship-form', async (req, res) => {
   try {
     const {
-      email,
       name,
-      emailConfirm,
+      email,
       phoneNumber,
       comment
     } = req.body;
 
+    console.log('Received sponsorship form data:', { name, email, phoneNumber, comment });
+
     // Validate required fields
-    if (!email || !name || !emailConfirm || !phoneNumber || !comment) {
+    if (!name || !email || !phoneNumber || !comment) {
+      console.log('Validation failed - missing fields');
       return res.status(400).json({
         success: false,
         message: 'All fields are required'
       });
     }
 
-    // Validate emails match
-    if (email !== emailConfirm) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email addresses do not match'
-      });
-    }
-
     const query = `
-      INSERT INTO sponsorship_form (email, name, email_confirm, phone_number, comment)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO sponsorship_form (name, email, phone_number, comment)
+      VALUES ($1, $2, $3, $4)
       RETURNING id
     `;
 
-    const values = [email, name, emailConfirm, phoneNumber, comment];
+    const values = [name, email, phoneNumber, comment];
 
     const result = await pool.query(query, values);
+
+    console.log('Sponsorship form saved successfully with ID:', result.rows[0].id);
 
     res.status(201).json({
       success: true,
