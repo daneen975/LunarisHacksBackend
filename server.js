@@ -1,4 +1,4 @@
-// server.js - Express backend for Lunaris Hacks forms
+// server.js - Express backend for Lunaris Hacks forms (Updated for simplified forms)
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -21,57 +21,27 @@ const pool = new Pool({
 // Create tables if they don't exist
 const createTables = async () => {
   try {
-    // General Interest Form table
+    // General Interest Form table (simplified)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS interest_form (
         id SERIAL PRIMARY KEY,
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        phone VARCHAR(20),
-        university VARCHAR(255),
-        year_of_study VARCHAR(100),
-        major VARCHAR(255),
-        engineering_discipline VARCHAR(255),
-        experience_level VARCHAR(100),
-        interests TEXT[],
-        hackathon_experience VARCHAR(100),
-        team_preference VARCHAR(100),
-        dietary_restrictions TEXT,
-        accessibility_needs TEXT,
-        emergency_contact_name VARCHAR(255),
-        emergency_contact_phone VARCHAR(20),
-        emergency_contact_relationship VARCHAR(100),
-        hear_about_us VARCHAR(255),
-        additional_info TEXT,
+        program VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Sponsorship Form table
+    // Sponsorship Form table (simplified)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS sponsorship_form (
         id SERIAL PRIMARY KEY,
-        contact_name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
-        company VARCHAR(255) NOT NULL,
-        job_title VARCHAR(255),
-        phone VARCHAR(20),
-        company_size VARCHAR(100),
-        industry VARCHAR(255),
-        website VARCHAR(500),
-        sponsorship_tier VARCHAR(100),
-        sponsorship_budget VARCHAR(100),
-        primary_goals TEXT[],
-        target_audience VARCHAR(255),
-        previous_sponsorship VARCHAR(100),
-        booth_interest BOOLEAN DEFAULT FALSE,
-        workshop_interest BOOLEAN DEFAULT FALSE,
-        judging_interest BOOLEAN DEFAULT FALSE,
-        networking_interest BOOLEAN DEFAULT FALSE,
-        special_requirements TEXT,
-        marketing_materials TEXT,
-        additional_info TEXT,
+        name VARCHAR(255) NOT NULL,
+        email_confirm VARCHAR(255) NOT NULL,
+        phone_number VARCHAR(20) NOT NULL,
+        comment TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -99,42 +69,24 @@ app.post('/api/interest-form', async (req, res) => {
       firstName,
       lastName,
       email,
-      phone,
-      university,
-      yearOfStudy,
-      major,
-      engineeringDiscipline,
-      experienceLevel,
-      interests,
-      hackathonExperience,
-      teamPreference,
-      dietaryRestrictions,
-      accessibilityNeeds,
-      emergencyContactName,
-      emergencyContactPhone,
-      emergencyContactRelationship,
-      hearAboutUs,
-      additionalInfo
+      program
     } = req.body;
 
+    // Validate required fields
+    if (!firstName || !lastName || !email || !program) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required'
+      });
+    }
+
     const query = `
-      INSERT INTO interest_form (
-        first_name, last_name, email, phone, university, year_of_study,
-        major, engineering_discipline, experience_level, interests,
-        hackathon_experience, team_preference, dietary_restrictions,
-        accessibility_needs, emergency_contact_name, emergency_contact_phone,
-        emergency_contact_relationship, hear_about_us, additional_info
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      INSERT INTO interest_form (first_name, last_name, email, program)
+      VALUES ($1, $2, $3, $4)
       RETURNING id
     `;
 
-    const values = [
-      firstName, lastName, email, phone, university, yearOfStudy,
-      major, engineeringDiscipline, experienceLevel, interests,
-      hackathonExperience, teamPreference, dietaryRestrictions,
-      accessibilityNeeds, emergencyContactName, emergencyContactPhone,
-      emergencyContactRelationship, hearAboutUs, additionalInfo
-    ];
+    const values = [firstName, lastName, email, program];
 
     const result = await pool.query(query, values);
 
@@ -165,48 +117,36 @@ app.post('/api/interest-form', async (req, res) => {
 app.post('/api/sponsorship-form', async (req, res) => {
   try {
     const {
-      contactName,
       email,
-      company,
-      jobTitle,
-      phone,
-      companySize,
-      industry,
-      website,
-      sponsorshipTier,
-      sponsorshipBudget,
-      primaryGoals,
-      targetAudience,
-      previousSponsorship,
-      boothInterest,
-      workshopInterest,
-      judgingInterest,
-      networkingInterest,
-      specialRequirements,
-      marketingMaterials,
-      additionalInfo
+      name,
+      emailConfirm,
+      phoneNumber,
+      comment
     } = req.body;
 
+    // Validate required fields
+    if (!email || !name || !emailConfirm || !phoneNumber || !comment) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields are required'
+      });
+    }
+
+    // Validate emails match
+    if (email !== emailConfirm) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email addresses do not match'
+      });
+    }
+
     const query = `
-      INSERT INTO sponsorship_form (
-        contact_name, email, company, job_title, phone, company_size,
-        industry, website, sponsorship_tier, sponsorship_budget,
-        primary_goals, target_audience, previous_sponsorship,
-        booth_interest, workshop_interest, judging_interest,
-        networking_interest, special_requirements, marketing_materials,
-        additional_info
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      INSERT INTO sponsorship_form (email, name, email_confirm, phone_number, comment)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING id
     `;
 
-    const values = [
-      contactName, email, company, jobTitle, phone, companySize,
-      industry, website, sponsorshipTier, sponsorshipBudget,
-      primaryGoals, targetAudience, previousSponsorship,
-      boothInterest, workshopInterest, judgingInterest,
-      networkingInterest, specialRequirements, marketingMaterials,
-      additionalInfo
-    ];
+    const values = [email, name, emailConfirm, phoneNumber, comment];
 
     const result = await pool.query(query, values);
 
