@@ -27,15 +27,16 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Create tables if they don't exist (WITH FIX FOR SPONSORSHIP TABLE)
+// Create tables if they don't exist (WITH FIX FOR BOTH TABLES)
 const createTables = async () => {
   try {
-    // Drop the old sponsorship table and recreate it with correct structure
+    // Drop both old tables and recreate with correct structure
     await pool.query(`DROP TABLE IF EXISTS sponsorship_form`);
+    await pool.query(`DROP TABLE IF EXISTS interest_form`);
     
-    // General Interest Form table
+    // General Interest Form table (with correct columns matching frontend)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS interest_form (
+      CREATE TABLE interest_form (
         id SERIAL PRIMARY KEY,
         first_name VARCHAR(255) NOT NULL,
         last_name VARCHAR(255) NOT NULL,
