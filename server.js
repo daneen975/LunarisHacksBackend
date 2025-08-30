@@ -1,4 +1,4 @@
-// server.js - Express backend for Lunaris Hacks forms (Complete Fixed Version)
+// server.js - Express backend for Lunaris Hacks forms (Complete with Database Fix)
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -18,9 +18,12 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Create tables if they don't exist
+// Create tables if they don't exist (WITH FIX FOR SPONSORSHIP TABLE)
 const createTables = async () => {
   try {
+    // Drop the old sponsorship table and recreate it with correct structure
+    await pool.query(`DROP TABLE IF EXISTS sponsorship_form`);
+    
     // General Interest Form table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS interest_form (
@@ -33,9 +36,9 @@ const createTables = async () => {
       )
     `);
 
-    // Sponsorship Form table (matches frontend fields exactly)
+    // Sponsorship Form table (with correct columns matching frontend)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS sponsorship_form (
+      CREATE TABLE sponsorship_form (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
@@ -71,6 +74,8 @@ app.post('/api/interest-form', async (req, res) => {
       program
     } = req.body;
 
+    console.log('Received interest form data:', { firstName, lastName, email, program });
+
     // Validate required fields
     if (!firstName || !lastName || !email || !program) {
       return res.status(400).json({
@@ -88,6 +93,8 @@ app.post('/api/interest-form', async (req, res) => {
     const values = [firstName, lastName, email, program];
 
     const result = await pool.query(query, values);
+
+    console.log('Interest form saved successfully with ID:', result.rows[0].id);
 
     res.status(201).json({
       success: true,
