@@ -1,4 +1,4 @@
-// server.js - Express backend for Lunaris Hacks forms (Complete with Database Fix)
+// server.js - Express backend for Lunaris Hacks forms (Complete with CORS Fix)
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -7,8 +7,17 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// Middleware with CORS fix
+app.use(cors({
+  origin: [
+    'https://lunarishacks.vercel.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
